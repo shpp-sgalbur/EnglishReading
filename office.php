@@ -13,8 +13,8 @@
 
         
     $content = '';
-    if (!isset($_SESSION['mode'])) {
-        $_SESSION['mode']='';
+    if (!isset($_SESSION['mode']) || $_SESSION['mode'] == 'mode') {
+        $_SESSION['mode']='mode_read';
     }
 
     if (isset($_SESSION['msg'])){
@@ -27,8 +27,10 @@
         header("Location: http://".$_SERVER['HTTP_HOST'].dirname($_SERVER['PHP_SELF']).'/joining.php');
 
     }
+    if (isset($_POST['btn_search'])) $_SESSION['mode'] = 'mode_search';
     if (isset($_POST['btn_read']) || !isset($_SESSION['mode'])) $_SESSION['mode'] = 'mode_read';
     if (isset($_POST['btn_stud']) || isset($_POST['btn_start_stud'])){
+       
         
         $_SESSION['mode'] = 'mode_stud';   
         //определяем количество слов в старом списке для изучения
@@ -51,13 +53,20 @@
     }
         
     
-    include_once 'forms/menu_form.php';//подключаем файл формы меню
-    $content .= $menu_form -> toString();
+    /*include_once 'forms/menu_form.php';//подключаем файл формы меню
+    $content .= $menu_form -> toString();*/
     
-        
-        
+   
 switch ($_SESSION['mode']) {
-    
+    case 'mode_search':
+        //если нажата кнопка "Найти"
+        
+        //если нажата кнопка "Поиск", т.е. только вошли в режим, удаляем результаты прошлого поиска
+        if(isset($_POST['btn_search'])) unset($_SESSION['find']);
+        //include_once 'forms/search_form_handler.php';
+        include_once  'forms/search_form.php';
+        $content .= $my_form ->toString();
+        break;
     //----------------------
     case 'mode_read':
     //---------------------
@@ -84,17 +93,26 @@ var_dump($dictionary);echo '<br>';*/
         if (isset($_POST['btn_reset_text'])  && ($_POST['text_area'] != '')){
             $table_name = 'u'.$_SESSION['user_id'];
             //var_dump($dictionary);
-               
+            $user_id = $_SESSION['user_id'];
+            $strStud = StudList::getOldStudList($user_id);
+            $arrStudListId = explode(',', $strStud);
+            
             foreach ($dictionary->wordsList as $word) {
                 //частота слова в тексте                
                 $frequency=$dictionary->wordFrequencyMap[htmlentities($word->foreign)];
                
                 //если пользователь не смотрел перевод слова, считается что он его знает
-                if($word->stud ==0 ||( $word->stud == 1 && time() -$word->lastData > $CRITERION_OF_REPETITION)){
+                if($word->stud ==0 ||( $word->stud == 1 && time() - $word->lastData > $CRITERION_OF_REPETITION)){
                     
-                    //$word->shows++;
+                    $word->answers += $word->frequency;
+                    $word->shows+= $word->frequency;
+                    $word->stud = 0;
+                    $key = array_search($word->id, $arrStudListId);
+                    if($key) unset ($arrStudListId[$key]);
+                        
+                  
                 }
-                $word->answers+=$frequency;
+                //$word->answers+=$frequency;
                 $answers = $word->answers;
                 $shows = $word->shows;
                 $level = $word->level = $answers / $shows;
@@ -106,6 +124,10 @@ var_dump($dictionary);echo '<br>';*/
                 
                  $result = queryRun($query,'Ошибка при обновлении личной таблицы ');
             }
+            $strId = implode(',', $arrStudListId);
+            $query ="UPDATE `users` SET `studList`='$strId' WHERE `id`= $user_id";
+            $result = queryRun($query,"Ошибка обновления таблицы `users` во время выполнения изменения списка для изучения"); 
+            
             $_POST['text_area'] = '';
             unset($_SESSION['dictionary']);
             //var_dump($dictionary);
@@ -120,6 +142,7 @@ var_dump($dictionary);echo '<br>';*/
             //получаем перевод слова
             $translate = $word->getNative();
             //добавляем слово в список для изучения
+            $word->stud = 1;
             $studList = $word->addToStudList();
             //Вставляем перевод в тестовое поле
             $_POST['trans_area'] = $translate;  
@@ -267,7 +290,7 @@ var_dump($dictionary);echo '<br>';*/
                  * Если в таблице users за пользователем закреплен непустой список, то список должен быть не пустым.
                  */
                 $content .= "<h1>Список для изучения пуст.</h1>"
-                            ."<p>Чтобы начать поцедуру изучения-повторения новых слов введите число новых вопросов.<br>"
+                            ."<p>Чтобы начать процедуру изучения-повторения новых слов, введите число новых вопросов.<br>"
                             ."и нажмите кнопку [Начать изучение]</p>";
                 unset($_POST['btn_start_stud']);
                 unset($_POST['btn_ready']);
@@ -300,7 +323,6 @@ var_dump($dictionary);echo '<br>';*/
         
         break;
 }
-        
         
         $pageObj = new pageClass($content);
         //если пользователь входит впервые, предложить войти или зарегистрироваться
@@ -664,8 +686,8 @@ function quo($str) {
 }
 /*
  * из содержимого тестового поля создает строку пригодную для использования в качестве
- * свойсива foreign слова (переводит в верхний регистр, небуквенные символы ппеобразует
- * в сироку символов, 
+ * свойсива foreign слова (переводит в верхний регистр, небуквенные символы преобразует
+ * в строку символов, 
  */
 function correct_foreign($str) {
     $str = quo($str);

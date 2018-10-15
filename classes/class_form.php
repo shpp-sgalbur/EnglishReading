@@ -60,7 +60,7 @@ function delInputForm($input_form) {
         $return_string   .=  "\n";
       }	     
      $return_string .= "</FORM>\n"; 
-     return($return_string) ;
+     return $return_string ;
     }
 }
 //***************************************************
@@ -73,23 +73,47 @@ abstract class HtmlFormElement{
     var $label;
     var $class;
     var $id;
+    var $str_attr;
+    var $child_arr;
     
     function __construct($arr_param) {
-        //проверяем соответствие параметра допустимому значению
-        
-        //если параметр допустим, создаем соответствующий ему элемент
-        //$this->type=$_type;
-        //$this->name=  $this->value=  $this->htmlString="";
+        $str_attr = '';
         foreach ($arr_param as $key => $value) {
             $this->$key=$value;
+            if($key !='text')
+                $this->str_attr .= "$key = '$value'";
         }
         
     }
+    
+       function addChild ($child) {
+   if (!isSet($child) ||
+       !is_object($child) || 
+       !is_subclass_of($child, 'HtmlFormElement')){
+           die("Argument to HtmlForm::addlnputForm ". 
+               "must be instance of HtmlFormElement.". 
+               "  Given argument is of class ".
+               get_class($child)
+   );
+    }
+    else {
+        //добавляем элемент в массив элементов формы
+        $this->child_arr[]=$child;
+        
+        
+    }
+}
     
     function isparametr($parametr,$msg){
 	 if (!isSet($parametr)) die($msg);
 	 return $parametr;
   		 	 	
+}
+/*
+ * Устанавливает значение атрибута элемента формы
+ */
+function setAttr($key, $value){
+    $this->$key=$value;
 }
     
     
@@ -330,18 +354,43 @@ class pElement extends HtmlFormElement{
     }
 }
 
+class divElement extends HtmlFormElement{
+    var $text;
+    function __construct($arr_param){
+    parent::__construct($arr_param);
+
+    $this->htmlString =  "<div $this->str_attr> $this->text</div>";
+                
+    }
+    function addChild($child) {
+        parent::addChild($child);
+        $this->text .= $child->htmlString;
+        $this->htmlString =  "<div $this->str_attr> $this->text</div>";
+    }
+}
+
 class ChbxElement extends HtmlFormElement{
     var $checked;
      function __construct($arr_param){
          parent::__construct($arr_param);
-         $this->type='checkbox';
+         if ($this->type='checkbox'){
+             $checkbox='checkbox';
+         }
+         else{
+             $checkbox='';
+         }
+         if(isset($this->checked) || $this->value == 1){
+             $checked = "checked ";
+         }else{
+             $checked ='';
+         }
         //$this->checked=$_checked;
-         $this->htmlString=
-                 "<p>".
+         $this->htmlString =
+                 
                  "<input type='checkbox' ".
                  "name='$this->name' ".
-                 
-                 "value='$this->value'>$this->label</p>";
+                 $checked.
+                 "value='$this->value' $checkbox>$this->label";
      }
 }
 ?>

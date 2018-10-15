@@ -14,7 +14,7 @@ $my_form=new HtmlForm(array(
 $btn_handling_text = new ButtonElement(array(
     'id'=>'btn_handling_text',
     'formaction' => './office.php',
-    'value' => 'обработать текст',
+    'value' => 'Обработать текст',
     'name' => 'btn_handling_text',
     'type' => 'button',
 ));
@@ -28,7 +28,7 @@ $btn_reset_text = new ButtonElement(array(
     'type' => 'button',
 ));
 
-    //создаем и отображаем объект абзаца для отображения читаемого текста'];
+    //создаем  объект абзаца для отображения читаемого текста'];
     $text_area = new TextAreaElement(array(
         'id' => 'text_area',
         'readonly' => 'readonly',
@@ -112,7 +112,7 @@ $trans_area = new TextAreaElement(array(
 
 
 //если форма запускается впервые или текст отображается впервые
-if (isset($_POST['btn_reset_text']) || isset($_POST['btn_read'])){
+if (count($_POST) == 0 || isset($_POST['btn_reset_text']) || isset($_POST['btn_read']) || isset($_POST['text_area']) && ($_POST['text_area']=='')){
     //создаем текстовую область для читаемого текста и добавляем ее на форму
     $text_area = new TextAreaElement(array(
         'id' => 'text_area',
@@ -136,7 +136,11 @@ else{
 }//end если форма запускается впервые или текст отображается впервые
 
 //если нажата кнопка "Обработать текст" и текст не пустой или нажата кнопка добавить перевод
-if (isset($_POST['text_area']) && ($_POST['text_area']!='') && isset($_POST['btn_handling_text']) || isset($_POST['btn_add'])){
+if (isset($_POST['text_area']) && ($_POST['text_area']!='') && isset($_POST['btn_handling_text']) 
+        || isset($_POST['btn_add']) 
+        || isset($_POST['btn_view_example']) 
+        || isset($_POST['btn_show_native'])
+        ){
     //
     $my_form->addInputForm($text_area);
     $my_form->addInputForm($btn_reset_text); 
@@ -161,10 +165,10 @@ if (isset($_POST['btn_find'])){
 
     //если была нажата "Показать примеры
     if (isset($_POST['btn_view_example'])) {
-        $my_form->addInputForm($text_area);
-        include 'dysplay_translate.inc';
+       
+        
         if (isset($_SESSION['exampleList'])) {//возможно эта проверка и не нужна, т.к. кнопка не должна быть показана, если примеров нет
-            include 'functions.php';
+             include  __DIR__ . '/../forms/functions.php';
             dysplay_examples($my_form);
             
         }
@@ -180,10 +184,10 @@ if (isset($_POST['btn_find'])){
     //Если была нажата "Показать перевод примера"
     if (isset($_POST['btn_show_native'])) {
         
-        $my_form->addInputForm($text_area);
-        include 'dysplay_translate.inc';        
+        
+                
         //получаем из переменной список примеров
-        include 'functions.php';
+         include  __DIR__ . '/../forms/functions.php';
         dysplay_example($my_form);
        
         

@@ -1,10 +1,4 @@
 <?php
-
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  * Description of pageClass
  * Этот класс описывает страницу.
@@ -21,68 +15,93 @@
 class pageClass {
 
 
-    private $roof ;
+    private $pageHTML;
+    private $head;
+    private $header;
     private $content ;
     private $footer ;
+    private $templatePath = "/template.php";
     /*
      * Конструктор
      */
-    function  __construct($_content = ''){
-        $hat = '';//'Шапка сайта';
-        $_roof  = 
-<<<BEGINPAGE
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-                    <link rel="stylesheet" type="text/css" href="./normalize.css">
-                     <link rel="stylesheet" type="text/css" href="./fstyle.css">
-                    <title></title>
-                </head>
-                <body><div class="roof">$hat </div>
-BEGINPAGE;
-        //если пользователь вошел
-        if(isset($_SESSION['access']) && ($_SESSION['access'] == 1)){
-             $_roof .= "<a href='exit.php'>Выход</a><br>";
-            //то приветствуем его 
-            $_roof .= "<div>Hello ". $_SESSION['login'] ."</div>";
-            //и подключаем его БД
-            
-           
-        }
-        else{//если пользователь еще не авторизирвался
-            //отображаем интерфейс авторизации
-            $log_in = 
-<<<LOGIN
-            <div class = 'authorization'>
-                <a href='joining.php'>Вход</a><br>
-                <a href='registration.php'>Регистрация</a><br>
-                <a href='forgot.php'>Забыли пароль</a><br>
-            </div>
-LOGIN;
-            $_roof .= $log_in;
-        }
+    function  __construct($_content = '', $socNets = array()){
         
-        $this->roof = $_roof;
-        $this-> content = $_content;
-        $footer_content = '';//содержимое подвала сайта
-        $this-> footer = '<div class="footer">'.$footer_content.'</div></body></html>';//контейнер для подвала и завершающие теги для страницы
+        
+        $socButtons = '';        
+        foreach ($socNets as $value) {
+            switch ($value){
+                case 'facebook':
+                    $socButtons .= $this->socButtonCodeFacebook();
+
+                            break;
+                    
+            }
+        }
+        include __DIR__."/../template.php";
+        
+        $this->head = $head;
+        $this->header = $header;
+        $this->content = $t_content;
+        $this->footer = $footer;
+
+
+        
+
+        
+
+        
+
+
+
     }
     
- 
-    /*
-     * Функция формирующая контент (среднюю часть)страницы
-     */
-     private function build_Content($content_){
-         include_once 'class_form.php';
-         $this -> content = $content_;
-         
+    function socButtonCodeFacebook(){
+        //добавляем первую часть кода в начало контента
+        $socButtonPart1  =
+        <<<PART1
+            <div id="fb"></div>
+            <script>(function(d, s, id) {
+              var js, fjs = d.getElementsByTagName(s)[0];
+              if (d.getElementById(id)) return;
+              js = d.createElement(s); js.id = id;
+              js.src = "//connect.facebook.net/ru_RU/sdk.js#xfbml=1&version=v2.10";
+              fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));</script>
+            
+PART1;
+        
+
+         //формируем вторую часть кода, для добавления в подвал
+        $socButtonPart2 =
+        <<<PART2
+            <div class="fb-like" 
+                data-href="http://www.eng.student.kr.ua" 
+                data-layout="standard" 
+                data-action="like" 
+                data-size="small" 
+                data-show-faces="true" 
+                data-share="true">
+            </div>            
+PART2;
+        return $socButtonPart1.$socButtonPart2;
     }
-    
+                
  
      function build_Page(){
-        return $this -> roof . $this -> content . $this -> footer;
+        $pageHTML = <<<PAGE
+            <!DOCTYPE html>
+            <html>
+                $this->head
+                <body>
+                    $this->header
+                    $this->content
+                    $this->footer
+                </body>
+            </html>
+PAGE;
+        return $pageHTML;
     }
-}
+    }
+    
 
 ?>
