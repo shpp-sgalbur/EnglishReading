@@ -8,10 +8,11 @@ if(isset($_POST['btnFind'])){
         //$strFindHTML = arrayToHTML($arrWords);
         $_SESSION['find'] = serialize($arrWords);
     }
+    //print_r($_SESSION['find']);
 }
 //если нажата кнопка "Добавить в список для изучения"
 if(isset($_POST['btnAdd'])){
-    //определяем id нажатой кнопки
+    
     $btnId = key($_POST['btnAdd']);
     
     $arrWords = unserialize($_SESSION['find']);
@@ -19,6 +20,39 @@ if(isset($_POST['btnAdd'])){
     
     $arrWords[$btnId]->addToStudList();
     $_SESSION['find'] = serialize($arrWords);
+}
+//если нажата кнопка "Удалить"
+if(isset($_POST['btnDel'])){
+    //определяем id нажатой кнопки
+    $wordId = key($_POST['btnDel']);
+    //echo $wordId.'<br>----------------------<br>';
+    if(isset($_SESSION['find'])){
+        $arrWords = unserialize ($_SESSION['find']);
+        //$_content='Запустить процедуру удаления элемента - '.$wordId;
+        //print_r($arrWords[$wordId]);
+        if($arrWords[$wordId]->delWord()){
+            $_content="Запись $wordId успешно удалена";
+            unset($_SESSION['find']);
+        }
+        
+    }
+    //print_r($_SESSION['find']);
+    //echo '<br>----------------------<br>';
+    //$_content='Запустить процедуру удаления єлемента - '.$wordId;
+    
+        
+    
+}
+/*
+ * Процедура удаления слова
+ */
+function delWord($word){
+    echo 'delWord($word)<br>';
+    $word->delWord();
+    print_r($word);
+    //удаляем слово из БД
+    $word->delWord();
+    //удаляем слово из массива $_SESSION['find']
 }
 /*
  * Проверяет заполнение полей foreign формы
@@ -108,11 +142,11 @@ function buildQueryForForeign($arrParam, $order) {
     if ($order){
         foreach ($arrParam as $key => $value) {
             if($value['asPart_chb']){
-                $arrLike[] = '.*'.$value['foreign_box'].'.*';
+                $arrLike[] = '.*'.htmlentities(addslashes($value['foreign_box'])).'.*';
             }
             else{
                 if(strlen($value['foreign_box'])>0){
-                    $arrLike[] ='.*' . "[[:<:]]".$value['foreign_box']."[[:>:]]";
+                    $arrLike[] ='.*' . "[[:<:]]".htmlentities(addslashes($value['foreign_box']))."[[:>:]]";
                 }
                 else{
                     $arrLike[] = "";
@@ -125,10 +159,10 @@ function buildQueryForForeign($arrParam, $order) {
         //если не надо соблюдать последовательность
         foreach ($arrParam as $key => $value){
             if($value['asPart_chb']){
-                $arrLike[] ="LIKE '%{$value['foreign_box']}%'";
+                $arrLike[] ="LIKE '%".htmlentities(addslashes($value['foreign_box']))."%'";
             }else{
                 if(strlen($value['foreign_box'])>0){
-                    $arrLike[] ="RLIKE '[[:<:]]".$value['foreign_box']."[[:>:]]'";
+                    $arrLike[] ="RLIKE '[[:<:]]".htmlentities(addslashes($value['foreign_box']))."[[:>:]]'";
                 }
                 else{
                     $arrLike[] = "LIKE '%%'";
@@ -138,6 +172,7 @@ function buildQueryForForeign($arrParam, $order) {
         }
         $query = "SELECT * FROM `thesaurus` WHERE `foreign` {$arrLike[0]} AND `foreign`  {$arrLike[1]} AND `foreign`  {$arrLike[2]}";
     }
+    echo $query;
     
     return $query;
 }
